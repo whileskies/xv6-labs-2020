@@ -1,0 +1,16 @@
+1. Explain the output of vmprint in terms of Fig 3-4 from the text. 
+What does page 0 contain? What is in page 2? When running in user mode, 
+could the process read/write the memory mapped by page 1?
+
+page 0 stores the text and data segment of '/init' process,
+page1 as the gard page, to avoid stackoverflow, 
+the process can't read/write the memory mapped by page1 when running in user mode,
+page2 as the user stack.
+
+
+
+2. Explain why the third test srcva + len < srcva is necessary in copyin_new(): 
+give values for srcva and len for which the first two test fail (i.e., they will not cause to return -1) 
+but for which the third one is true (resulting in returning -1).
+
+if(ph.vaddr + ph.memsz < ph.vaddr) checks for whether the sum overflows a 64-bit integer.
