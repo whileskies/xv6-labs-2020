@@ -503,6 +503,8 @@ scheduler(void)
 
         swtch(&c->context, &p->context);
 
+        kvminithart();
+
         c->proc = 0;
 
         found = 1;
