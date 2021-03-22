@@ -16,7 +16,7 @@ int match(char* s, char* p) {
     return *s == *p || (*p == '.' && *s != '\0') ? match(s + 1, p + 1) : 0; 
   else 
     return *s == *p || (*p == '.' && *s != '\0') ? match(s, p + 2) || match(s + 1, p) : match(s, p + 2);
-    //或者return (*s == *p || (*p == '.' && *s != '\0')) && match(s + 1, p) || match(s, p + 2);
+    //return (*s == *p || (*p == '.' && *s != '\0')) && match(s + 1, p) || match(s, p + 2);
 }
 
 
