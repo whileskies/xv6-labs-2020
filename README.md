@@ -17,6 +17,6 @@ MIT 6.S081 / Fall 2020 lab
 
 
 #### 文档
-Lab1 [Utilities](doc/Lab1-Xv6%20and%20Unix%20utilities.md)
-Lab2 [System calls](doc/Lab2-system%20calls.md)
-Lab3 [Page tables](doc/Lab3-page%20tables.md)
+- Lab1 [Utilities](doc/Lab1-Xv6%20and%20Unix%20utilities.md)
+- Lab2 [System calls](doc/Lab2-system%20calls.md)
+- Lab3 [Page tables](doc/Lab3-page%20tables.md)
