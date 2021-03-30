@@ -27,4 +27,6 @@ int cnt(int n) {
 void demo() {
   int sum = cnt(10);
   printf("demo: %d\n", sum);
+
+  printf("x=%d y=%d\n", 3);
 }
