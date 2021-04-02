@@ -4,9 +4,11 @@ Lab2为xv6添加一些系统调用，以便了解系统调用过程
 
 #### System call tracing (moderate)
 
-**任务：**添加一个`trace`系统调用，参数为系统调用号掩码，用于追踪系统调用的路径以及返回值
+##### 任务
 
-##### 过程：
+添加一个`trace`系统调用，参数为系统调用号掩码，用于追踪系统调用的路径以及返回值
+
+##### 过程
 
 1. 首先为`proc.h`中的`proc`结构体添加一个跟踪掩码字段：
 
@@ -63,7 +65,7 @@ syscall(void)
 }
 ```
 
-**运行结果：**
+4. 在`sysproc.c/sys_trace`设置进程的掩码：
 
 ```c
 uint64
@@ -107,15 +109,17 @@ np->trace_mask = p->trace_mask;
 release(&np->lock)
 ```
 
-**运行结果：**
+##### 运行结果
 
 ![image-20210322140342934](https://whileskies-pic.oss-cn-beijing.aliyuncs.com/20210322140342.png)
 
 #### Sysinfo (moderate)
 
-**任务：**实现sysinfo系统调用用于获取当前的空闲内存字节数以及状态为`UNUSED`的进程数
+##### 任务
 
-**过程：**
+实现sysinfo系统调用用于获取当前的空闲内存字节数以及状态为`UNUSED`的进程数
+
+##### 过程
 
 1. 获取空闲内存字节数
 

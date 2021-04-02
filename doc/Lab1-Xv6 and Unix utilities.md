@@ -8,7 +8,9 @@ Lab1主要是了解并运行RiscV版本的XV6，并为其添加一些用户态�
 
 #### sleep (easy)
 
-**任务：**调用内核sleep系统调用完成功能
+##### 任务
+
+调用内核sleep系统调用完成功能
 
 ```c
 #include "kernel/types.h"
@@ -33,7 +35,9 @@ main(int argc, char *argv[]) {
 
 #### pingpong (easy)
 
-**任务：**创建一对父子进程，该对进程使用管道通信
+##### 任务
+
+创建一对父子进程，该对进程使用管道通信
 
 ```c
 #include "kernel/types.h"
@@ -80,11 +84,13 @@ main() {
 
 #### primes (moderate)/(hard)
 
-**任务：**使用`pipe`、`fork`组成一管道过滤器，第一个进程输出2，并过滤2-35中2的倍数的数，第二个进程输出3并过滤3的倍数的数...
+##### 任务
+
+使用`pipe`、`fork`组成一管道过滤器，第一个进程输出2，并过滤2-35中2的倍数的数，第二个进程输出3并过滤3的倍数的数...
 
 <img src="https://whileskies-pic.oss-cn-beijing.aliyuncs.com/20210321224328.png" alt="image-20210321224322050" style="zoom: 80%;" />
 
-**过程：**
+##### 过程
 
 首先main函数初始管道，将2-35写入管道，并关闭写管道，调用filter函数处理，filter函数用于递归处理该问题，参数为上一层管道数组，从管道读端读入上一层的数字，并创建一个新管道，对数字过滤后传入下一层，下一层即为通过fork创建的子进程
 
@@ -148,15 +154,17 @@ main()
 }
 ```
 
-**运行结果：**
+##### 运行结果
 
 ![image-20210321225351704](https://whileskies-pic.oss-cn-beijing.aliyuncs.com/20210321225353.png)
 
 #### find (moderate)
 
-**任务：**在一个目录树中搜索特定名称的所有文件
+##### 任务
 
-**过程：**
+在一个目录树中搜索特定名称的所有文件
+
+##### 过程
 
 递归搜索目录中的指定文件即可，增加了`.`、`*`的通配符功能，正则匹配代码参考自[LeetCode 44题](https://leetcode-cn.com/problems/wildcard-matching/)
 
@@ -270,15 +278,17 @@ main(int argc, char *argv[])
 }
 ```
 
-**运行结果：**
+##### 运行结果
 
 ![image-20210322091152189](https://whileskies-pic.oss-cn-beijing.aliyuncs.com/20210322091153.png)
 
 #### xargs (moderate)
 
-**任务：**编写一简单版本的UNIX xargs程序，该程序从标准输入中读取多行并将每一行作为一指定程序的参数
+##### 任务
 
-**过程：**
+编写一简单版本的UNIX xargs程序，该程序从标准输入中读取多行并将每一行作为一指定程序的参数
+
+##### 过程
 
 xargs从标准输入中读多行，多行按照`\n`分隔，使用`exec`系统调用创建子进程执行指定程序，并将标准输入读的参数和该程序原本的参数一并作为该程序参数
 
@@ -367,7 +377,7 @@ main(int argc, char *argv[])
 }
 ```
 
-**运行结果：**
+##### 运行结果
 
 ![image-20210322092734417](https://whileskies-pic.oss-cn-beijing.aliyuncs.com/20210322092735.png)
 
