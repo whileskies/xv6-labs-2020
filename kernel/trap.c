@@ -29,6 +29,85 @@ trapinithart(void)
   w_stvec((uint64)kernelvec);
 }
 
+void
+save_regs(struct proc *p)
+{
+  p->regs.epc = p->trapframe->epc;
+  p->regs.ra = p->trapframe->ra;
+  p->regs.sp = p->trapframe->sp;
+  p->regs.gp = p->trapframe->gp;
+  p->regs.tp = p->trapframe->tp;
+  p->regs.t0 = p->trapframe->t0;
+  p->regs.t1 = p->trapframe->t1;
+  p->regs.t2 = p->trapframe->t2;
+  p->regs.s0 = p->trapframe->s0;
+  p->regs.s1 = p->trapframe->s1;
+
+  p->regs.a0 = p->trapframe->a0;
+  p->regs.a1 = p->trapframe->a1;
+  p->regs.a2 = p->trapframe->a2;
+  p->regs.a3 = p->trapframe->a3;
+  p->regs.a4 = p->trapframe->a4;
+  p->regs.a5 = p->trapframe->a5;
+  p->regs.a6 = p->trapframe->a6;
+  p->regs.a7 = p->trapframe->a7;
+
+  p->regs.s2 = p->trapframe->s2;
+  p->regs.s3 = p->trapframe->s3;
+  p->regs.s4 = p->trapframe->s4;
+  p->regs.s5 = p->trapframe->s5;
+  p->regs.s6 = p->trapframe->s6;
+  p->regs.s7 = p->trapframe->s7;
+  p->regs.s8 = p->trapframe->s8;
+  p->regs.s9 = p->trapframe->s9;
+  p->regs.s10 = p->trapframe->s10;
+  p->regs.s11 = p->trapframe->s11;
+  
+  p->regs.t3 = p->trapframe->t3;
+  p->regs.t4 = p->trapframe->t4;
+  p->regs.t5 = p->trapframe->t5;
+  p->regs.t6 = p->trapframe->t6;
+}
+
+void restore_regs(struct proc *p)
+{
+  p->trapframe->epc = p->regs.epc;
+  p->trapframe->ra = p->regs.ra;
+  p->trapframe->sp = p->regs.sp;
+  p->trapframe->gp = p->regs.gp;
+  p->trapframe->tp = p->regs.tp;
+  p->trapframe->t0 = p->regs.t0;
+  p->trapframe->t1 = p->regs.t1;
+  p->trapframe->t2 = p->regs.t2;
+  p->trapframe->s0 = p->regs.s0;
+  p->trapframe->s1 = p->regs.s1;
+
+  p->trapframe->a0 = p->regs.a0;
+  p->trapframe->a1 = p->regs.a1;
+  p->trapframe->a2 = p->regs.a2;
+  p->trapframe->a3 = p->regs.a3;
+  p->trapframe->a4 = p->regs.a4;
+  p->trapframe->a5 = p->regs.a5;
+  p->trapframe->a6 = p->regs.a6;
+  p->trapframe->a7 = p->regs.a7;
+
+  p->trapframe->s2 = p->regs.s2;
+  p->trapframe->s3 = p->regs.s3;
+  p->trapframe->s4 = p->regs.s4;
+  p->trapframe->s5 = p->regs.s5;
+  p->trapframe->s6 = p->regs.s6;
+  p->trapframe->s7 = p->regs.s7;
+  p->trapframe->s8 = p->regs.s8;
+  p->trapframe->s9 = p->regs.s9;
+  p->trapframe->s10 = p->regs.s10;
+  p->trapframe->s11 = p->regs.s11;
+
+  p->trapframe->t3 = p->regs.t3;
+  p->trapframe->t4 = p->regs.t4;
+  p->trapframe->t5 = p->regs.t5;
+  p->trapframe->t6 = p->regs.t6;
+}
+
 //
 // handle an interrupt, exception, or system call from user space.
 // called from trampoline.S
@@ -77,8 +156,22 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
+  // lab alarm
+  if(which_dev == 2) {
+    p->ticks++;
+    if (p->alarm_ticks != 0 && p->alarm_running == 0) {
+      if (p->last_ticks + p->alarm_ticks <= p->ticks) {
+        p->last_ticks = p->ticks;
+
+        save_regs(p);
+        p->trapframe->epc = p->alarm_handler_addr;
+        
+        p->alarm_running = 1;
+      }
+    }
+    
     yield();
+  }
 
   usertrapret();
 }
