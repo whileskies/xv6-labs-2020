@@ -82,7 +82,6 @@ struct trapframe {
 
 struct alarm_regs
 {
-  //uint64 ori_ra;
   uint64 epc;
   uint64 ra;
   uint64 sp;
@@ -145,6 +144,6 @@ struct proc {
   uint64 alarm_handler_addr;         // lab alarm
   uint64 ticks;                      // lab alarm
   uint64 last_ticks;                 // lab alarm
-  struct alarm_regs regs;             // lab alarm
+  struct alarm_regs regs;            // lab alarm
   int alarm_running;                 // lab alarm
 };
