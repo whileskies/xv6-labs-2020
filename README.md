@@ -7,7 +7,7 @@ MIT 6.S081 / Fall 2020 lab
 - [x] Lab2 [System calls](https://github.com/whileskies/xv6-labs-2020/tree/syscall)
 - [x] Lab3 [Page tables](https://github.com/whileskies/xv6-labs-2020/tree/pgtbl)
 - [x] Lab4 [Traps](https://github.com/whileskies/xv6-labs-2020/tree/traps)
-- [ ] Lab5 Lazy allocation
+- [x] Lab5 [Lazy allocation](https://github.com/whileskies/xv6-labs-2020/tree/lazy)
 - [ ] Lab6 Copy on-write
 - [ ] Lab7 Multithreading
 - [ ] Lab8 Lock
@@ -20,4 +20,5 @@ MIT 6.S081 / Fall 2020 lab
 - Lab1 [Utilities](doc/Lab1-Xv6%20and%20Unix%20utilities.md)
 - Lab2 [System calls](doc/Lab2-system%20calls.md)
 - Lab3 [Page tables](doc/Lab3-page%20tables.md)
-- Lab4  [Traps](doc/Lab4-traps.md) 
+- Lab4 [Traps](doc/Lab4-traps.md) 
+- Lab5 [Lazy](doc/Lab5-lazy.md)
