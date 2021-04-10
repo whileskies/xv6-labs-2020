@@ -451,7 +451,7 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 int
 lazy_wr_alloc(uint64 va, struct proc *p)
 {
-  if(va > p->sz) {
+  if(va >= p->sz || va < PGROUNDDOWN(p->trapframe->sp)) {
     //printf("lazy wr alloc error: va higher than sz\n");
     return -1;
   }
@@ -479,7 +479,7 @@ int
 lazy_alloc(uint64 stval, struct proc *p)
 {
   uint64 va = PGROUNDDOWN(stval);
-  if(stval > p->sz || stval < PGROUNDDOWN(p->trapframe->sp)) {
+  if(stval >= p->sz || stval < PGROUNDDOWN(p->trapframe->sp)) {
     //printf("lazy alloc error: va higher than sz or below user stack\n");
     p->killed = 1;
     return -1;
