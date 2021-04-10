@@ -5,6 +5,8 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "proc.h"
 
 /*
  * the kernel's page table.
@@ -181,9 +183,11 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
 
   for(a = va; a < va + npages*PGSIZE; a += PGSIZE){
     if((pte = walk(pagetable, a, 0)) == 0)
-      panic("uvmunmap: walk");
+      continue;
+      //panic("uvmunmap: walk");
     if((*pte & PTE_V) == 0)
-      panic("uvmunmap: not mapped");
+      //panic("uvmunmap: not mapped");
+      continue;
     if(PTE_FLAGS(*pte) == PTE_V)
       panic("uvmunmap: not a leaf");
     if(do_free){
@@ -315,9 +319,11 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
 
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
-      panic("uvmcopy: pte should exist");
+      continue;
+      //panic("uvmcopy: pte should exist");
     if((*pte & PTE_V) == 0)
-      panic("uvmcopy: page not present");
+      continue;
+      //panic("uvmcopy: page not present");
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
     if((mem = kalloc()) == 0)
@@ -439,4 +445,60 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+}
+
+// Lazy alloc for write read and pipe
+int
+lazy_wr_alloc(uint64 va, struct proc *p)
+{
+  if(va > p->sz) {
+    //printf("lazy wr alloc error: va higher than sz\n");
+    return -1;
+  }
+
+  char *mem = kalloc();
+  if(mem == 0){
+    //printf("lazy wr alloc error: no more memory\n");
+    p->killed = 1;
+    return -1;
+  }
+
+  memset(mem, 0, PGSIZE);
+  if(mappages(p->pagetable, va, PGSIZE, (uint64)mem, PTE_W|PTE_R|PTE_U) != 0){
+    kfree(mem);
+    //printf("lazy wr alloc error: map error\n");
+    p->killed = 1;
+    return -1;
+  }
+
+  return 0;
+}
+
+// Lazy alloc for sbrk
+int
+lazy_alloc(uint64 stval, struct proc *p)
+{
+  uint64 va = PGROUNDDOWN(stval);
+  if(stval > p->sz || stval < PGROUNDDOWN(p->trapframe->sp)) {
+    //printf("lazy alloc error: va higher than sz or below user stack\n");
+    p->killed = 1;
+    return -1;
+  }
+
+  char *mem = kalloc();
+  if(mem == 0){
+    //printf("lazy alloc error: no more memory\n");
+    p->killed = 1;
+    return -1;
+  }
+
+  memset(mem, 0, PGSIZE);
+  if(mappages(p->pagetable, va, PGSIZE, (uint64)mem, PTE_W|PTE_R|PTE_U) != 0){
+    kfree(mem);
+    //printf("lazy alloc error: map error\n");
+    p->killed = 1;
+    return -1;
+  }
+
+  return 0;
 }
