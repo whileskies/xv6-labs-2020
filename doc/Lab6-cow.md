@@ -196,6 +196,100 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 }
 ```
 
+5. 修改引用计数时加锁
+
+当修改某物理页引用计数时分为两步：`set_pg_rfc(pa, get_pg_rfc(pa) + 1)`，首先通过`get_pg_rfc()`函数获取某物理页的引用计数，之后再通过`set_pg_rfc()`来修改引用计数，当多个进程同时修改同一物理页的引用计数时，会发生`race conditons`，如果不加锁，会造成物理页的内存泄露
+
+举个例子，如果有3个进程共享同一物理页，那么该物理页的引用计数为3，当其中2个进程同时调用`kfree()`函数释放物理页，在`kfree()`代码中，2个进程同时执行`uint16 ref = get_pg_rfc((uint64)pa)`，得到当前引用计数为3，之后一个进程先执行`set_pg_rfc((uint64)pa, ref - 1)`将该页引用计数变为2，再之后另一个进程同样执行`set_pg_rfc((uint64)pa, ref - 1)`将该页引用计数变为2，这样最终该页引用计数变为2（正确情况应为1），丢失了一次更新，实际上之后只有1个进程共享该物理页，当该进程也调用`kfree()`释放物理页时，引用计数从2变为1，而不是直接释放该物理页，最终造成该物理页的泄露，一直不会被回收
+
+```c
+void
+kfree(void *pa)
+{
+  struct run *r;
+  if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
+    panic("kfree");
+
+  acquire(&rfc_lock);
+  uint16 ref = get_pg_rfc((uint64)pa);
+  if (ref > 1) {
+    set_pg_rfc((uint64)pa, ref - 1);
+    release(&rfc_lock);
+    return;
+  }
+  release(&rfc_lock);
+
+  // Fill with junk to catch dangling refs.
+  memset(pa, 1, PGSIZE);
+  r = (struct run*)pa;
+  acquire(&kmem.lock);
+  r->next = kmem.freelist;
+  kmem.freelist = r;
+  release(&kmem.lock);
+}
+```
+
+因此，为解决并发出现的问题，应当把获取引用计数、修改引用计数这两步操作作为一个原子操作，一次只能有一个CPU或进程执行该临界区代码
+
+首先在`kalloc.c`定义页引用的自旋锁：
+
+```c
+struct spinlock rfc_lock;
+```
+
+在`kalloc.c/kinit()`函数中初始化该自旋锁：
+
+```c
+kinit()
+{
+  initlock(&kmem.lock, "kmem");
+  initlock(&rfc_lock, "pgs_rfc");
+  freerange(end, (void*)PHYSTOP);
+}
+```
+
+在`kalloc.c/kfree()`函数中加锁：
+
+```c
+  acquire(&rfc_lock);
+  uint16 ref = get_pg_rfc((uint64)pa);
+  if (ref > 1) {
+    set_pg_rfc((uint64)pa, ref - 1);
+    release(&rfc_lock);
+    return;
+  }
+  release(&rfc_lock);
+```
+
+在`vm.c/uvmcopy()`函数中加锁：
+
+```c
+    acquire(&rfc_lock);
+    set_pg_rfc(pa, get_pg_rfc(pa) + 1);
+    release(&rfc_lock);
+    if(mappages(new, i, PGSIZE, pa, (flags & ~PTE_W) | PTE_COW) != 0) {
+      acquire(&rfc_lock);
+      set_pg_rfc(pa, get_pg_rfc(pa) - 1);
+      release(&rfc_lock);
+      goto err;
+    }
+```
+
+在`vm.c/cow`中加锁：
+
+```c
+    acquire(&rfc_lock);
+    uint16 rfc = get_pg_rfc(pa);
+    rfc--;
+    set_pg_rfc(pa, rfc);
+    release(&rfc_lock);
+    if (rfc == 0) {
+      kfree((char *)pa);
+    }
+```
+
+实际上这里加锁的粒度比较大，是对访问整个引用数组时加锁，实际上只需对访问特定物理页的引用计数时加锁，但是这样需要的锁过多
+
 #### 实验测试
 
 ![image-20210413175042082](https://whileskies-pic.oss-cn-beijing.aliyuncs.com/20210413175049.png)
