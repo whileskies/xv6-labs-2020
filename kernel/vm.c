@@ -17,6 +17,8 @@ extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
 
+extern struct spinlock rfc_lock;
+
 /*
  * create a direct-map page table for the kernel.
  */
@@ -324,9 +326,14 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
 
     *pte = *pte & ~PTE_W;
     *pte = *pte | PTE_COW;
+
+    acquire(&rfc_lock);
     set_pg_rfc(pa, get_pg_rfc(pa) + 1);
+    release(&rfc_lock);
     if(mappages(new, i, PGSIZE, pa, (flags & ~PTE_W) | PTE_COW) != 0) {
+      acquire(&rfc_lock);
       set_pg_rfc(pa, get_pg_rfc(pa) - 1);
+      release(&rfc_lock);
       goto err;
     }
   }
@@ -363,9 +370,12 @@ cow(uint64 va, struct proc *p)
       return -1;
 
     memmove(mem, (char*)pa, PGSIZE);
+
+    acquire(&rfc_lock);
     uint16 rfc = get_pg_rfc(pa);
     rfc--;
     set_pg_rfc(pa, rfc);
+    release(&rfc_lock);
     if (rfc == 0) {
       kfree((char *)pa);
     }

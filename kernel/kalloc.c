@@ -10,6 +10,7 @@
 #include "defs.h"
 
 uint16 pgs_rfc[(PHYSTOP - KERNBASE) / PGSIZE];
+struct spinlock rfc_lock;
 
 void freerange(void *pa_start, void *pa_end);
 
@@ -29,6 +30,7 @@ void
 kinit()
 {
   initlock(&kmem.lock, "kmem");
+  initlock(&rfc_lock, "pgs_rfc");
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -53,11 +55,14 @@ kfree(void *pa)
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
 
+  acquire(&rfc_lock);
   uint16 ref = get_pg_rfc((uint64)pa);
   if (ref > 1) {
     set_pg_rfc((uint64)pa, ref - 1);
+    release(&rfc_lock);
     return;
   }
+  release(&rfc_lock);
     
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
