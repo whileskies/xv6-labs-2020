@@ -9,7 +9,7 @@ MIT 6.S081 / Fall 2020 lab
 - [x] Lab4 [Traps](https://github.com/whileskies/xv6-labs-2020/tree/traps)
 - [x] Lab5 [Lazy allocation](https://github.com/whileskies/xv6-labs-2020/tree/lazy)
 - [x] Lab6 [Copy on-write](https://github.com/whileskies/xv6-labs-2020/tree/cow)
-- [ ] Lab7 Multithreading
+- [x] Lab7 [Multithreading](https://github.com/whileskies/xv6-labs-2020/tree/thread)
 - [ ] Lab8 Lock
 - [ ] Lab9 File system
 - [ ] Lab10 mmap
@@ -23,3 +23,4 @@ MIT 6.S081 / Fall 2020 lab
 - Lab4 [Traps](doc/Lab4-traps.md) 
 - Lab5 [Lazy](doc/Lab5-lazy.md)
 - Lab6 [COW](doc/Lab6-cow.md)
+- Lab7 [Multithreading](doc/Lab7-Multithreading.md)
