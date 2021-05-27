@@ -1,0 +1,2 @@
+Single thread is executed serially, there will be no conflicts.
+When two threads concurrently insert elements into the same bucket, one of them will lose the modification to the bucket header.
