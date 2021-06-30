@@ -16,6 +16,9 @@
 #include "file.h"
 #include "fcntl.h"
 
+static struct inode*
+create(char *path, short type, short major, short minor);
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -165,6 +168,45 @@ bad:
   return -1;
 }
 
+uint64
+sys_symlink(void)
+{
+  char new[MAXPATH], old[MAXPATH];
+  struct inode *op, *ip;
+
+  if(argstr(0, old, MAXPATH) < 0 || argstr(1, new, MAXPATH) < 0)
+    return -1;
+
+  begin_op();
+  if((op = namei(old)) != 0){
+    ilock(op);
+    if(op->type == T_DIR){
+      iunlockput(op);
+      end_op();
+      return -1;
+    }
+    iunlockput(op);
+  }
+  
+  if((ip = create(new, T_SYMLINK, 0, 0)) == 0){
+    end_op();
+    return -1;
+  }
+
+  uint len = strlen(old) + 1;
+  if(writei(ip, 0, (uint64)old, 0, len) != len){
+    iunlockput(ip);
+    end_op();
+    return -1;
+  }
+
+  iupdate(ip);
+  iunlockput(ip);
+  end_op();
+  
+  return 0;
+}
+
 // Is the directory dp empty except for "." and ".." ?
 static int
 isdirempty(struct inode *dp)
@@ -252,7 +294,7 @@ create(char *path, short type, short major, short minor)
   if((ip = dirlookup(dp, name, 0)) != 0){
     iunlockput(dp);
     ilock(ip);
-    if(type == T_FILE && (ip->type == T_FILE || ip->type == T_DEVICE))
+    if((type == T_SYMLINK || type == T_FILE) && (ip->type == T_FILE || ip->type == T_DEVICE || ip->type == T_SYMLINK))
       return ip;
     iunlockput(ip);
     return 0;
@@ -283,6 +325,34 @@ create(char *path, short type, short major, short minor)
   return ip;
 }
 
+struct inode*
+find_symlink(char *path, char *rpath, int depth)
+{
+  if(depth >= 10)
+    return 0;
+
+  struct inode *ip;
+  if((ip = namei(path)) != 0){
+    ilock(ip);
+
+    if(ip->type != T_SYMLINK){
+      iunlock(ip);
+      return ip;
+    }
+
+    if(readi(ip, 0, (uint64)rpath, 0, ip->size) == 0){
+      iunlockput(ip);
+      return 0;
+    }
+
+    iunlockput(ip);
+  
+    return find_symlink(rpath, rpath, depth + 1);
+  }
+
+  return 0;
+}
+
 uint64
 sys_open(void)
 {
@@ -304,10 +374,19 @@ sys_open(void)
       return -1;
     }
   } else {
-    if((ip = namei(path)) == 0){
-      end_op();
-      return -1;
+    if(omode & O_NOFOLLOW){
+      if((ip = namei(path)) == 0){
+        end_op();
+        return -1;
+      }
+    } else{
+      char rpath[MAXPATH];
+      if((ip = find_symlink(path, rpath, 0)) == 0){
+        end_op();
+        return -1;
+      }
     }
+    
     ilock(ip);
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
