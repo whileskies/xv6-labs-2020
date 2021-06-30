@@ -11,7 +11,7 @@ MIT 6.S081 / Fall 2020 lab
 - [x] Lab6 [Copy on-write](https://github.com/whileskies/xv6-labs-2020/tree/cow)
 - [x] Lab7 [Multithreading](https://github.com/whileskies/xv6-labs-2020/tree/thread)
 - [x] Lab8 [Locks](https://github.com/whileskies/xv6-labs-2020/tree/lock)
-- [ ] Lab9 File system
+- [x] Lab9 [File system](https://github.com/whileskies/xv6-labs-2020/tree/fs)
 - [ ] Lab10 mmap
 - [ ] Lab11 network driver
 
@@ -25,3 +25,4 @@ MIT 6.S081 / Fall 2020 lab
 - Lab6 [COW](doc/Lab6-cow.md)
 - Lab7 [Multithreading](doc/Lab7-Multithreading.md)
 - Lab8 [Locks](doc/Lab8-locks.md)
+- Lab9 [File system](doc/Lab9-file%20system.md)
