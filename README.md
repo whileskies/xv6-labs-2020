@@ -12,7 +12,7 @@ MIT 6.S081 / Fall 2020 lab
 - [x] Lab7 [Multithreading](https://github.com/whileskies/xv6-labs-2020/tree/thread)
 - [x] Lab8 [Locks](https://github.com/whileskies/xv6-labs-2020/tree/lock)
 - [x] Lab9 [File system](https://github.com/whileskies/xv6-labs-2020/tree/fs)
-- [ ] Lab10 mmap
+- [x] Lab10 [mmap](https://github.com/whileskies/xv6-labs-2020/tree/mmap)
 - [ ] Lab11 network driver
 
 
@@ -26,3 +26,4 @@ MIT 6.S081 / Fall 2020 lab
 - Lab7 [Multithreading](doc/Lab7-Multithreading.md)
 - Lab8 [Locks](doc/Lab8-locks.md)
 - Lab9 [File system](doc/Lab9-file%20system.md)
+- Lab10 [mmap](doc/Lab10-mmap.md)
