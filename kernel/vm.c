@@ -5,6 +5,11 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "sleeplock.h"
+#include "proc.h"
+#include "fcntl.h"
+#include "file.h"
 
 /*
  * the kernel's page table.
@@ -95,6 +100,14 @@ walk(pagetable_t pagetable, uint64 va, int alloc)
     }
   }
   return &pagetable[PX(0, va)];
+}
+
+// Whether the virtual address is mapped.
+int
+vm_exists(pagetable_t pagetable, uint64 va)
+{
+  pte_t *pte;
+  return (pte = walk(pagetable, va, 0)) != 0 && (*pte & PTE_V) != 0;
 }
 
 // Look up a virtual address, return the physical address,
@@ -428,4 +441,148 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+}
+
+// Mmap pages does not exist, page fault will occur.
+// Alloc a physical page and read the file to it.
+int 
+mmap_pgfault(uint64 stval, struct proc *p)
+{
+  stval = PGROUNDDOWN(stval);
+
+  struct vma *a = 0;
+  // Which vma?
+  for(int i = 0; i < NVMA; i++){
+    if(p->vmas[i].used && stval >= p->vmas[i].start && stval < p->vmas[i].end){
+      a = &p->vmas[i];
+      break;
+    }
+  }
+
+  if(a == 0) return -1;
+
+  char *pa = kalloc();
+  if(pa == 0) return -1;
+  memset(pa, 0, PGSIZE);
+
+  int perm = PTE_U;
+  if(a->permissions & PROT_READ)
+    perm |= PTE_R;
+  if(a->permissions & PROT_WRITE)
+    perm |= PTE_W;
+  if(mappages(p->pagetable, PGROUNDDOWN(stval), PGSIZE, (uint64)pa, perm) != 0)
+    return -1;
+  
+  uint64 off = stval - a->start + a->offset;
+  ilock(a->f->ip);
+  if(readi(a->f->ip, 0, (uint64)pa, off, PGSIZE) <= 0){
+    iunlock(a->f->ip);
+    return -1;
+  }
+  iunlock(a->f->ip);
+
+  return 0;
+}
+
+// If an unmapped page has been modified and the file is mapped MAP_SHARED, 
+// write the page back to the file. 
+int
+munmap_writeback(uint64 unstart, uint64 unlen, uint64 start, uint64 offset, struct vma *a)
+{
+  struct file *f = a->f;
+  uint off = unstart - start + offset;
+  uint size;
+
+  ilock(f->ip);
+  size = f->ip->size;
+  iunlock(f->ip);
+
+  if(off >= size) return -1;
+
+  uint n = unlen < size - off ? unlen : size - off;
+
+  int r, ret = 0;
+  int max = ((MAXOPBLOCKS-1-1-2) / 2) * BSIZE;
+  int i = 0;
+  while(i < n){
+    int n1 = n - i;
+    if(n1 > max)
+      n1 = max;
+
+    begin_op();
+    ilock(f->ip);
+    r = writei(f->ip, 1, unstart, off + i, n1);
+    iunlock(f->ip);
+    end_op();
+
+    if(r != n1){
+      // error from writei
+      break;
+    }
+    i += r;
+  }
+  ret = (i == n ? n : -1);
+
+  return ret;
+}
+
+//Find the VMA for the address range and unmap the specified pages.
+int
+munmap(uint64 addr, int length)
+{
+  struct proc *p = myproc();
+  struct vma *a = 0;
+  addr = PGROUNDDOWN(addr);
+
+  for(int i = 0; i < NVMA; i++){
+    if(p->vmas[i].used && addr >= p->vmas[i].start && addr < p->vmas[i].end){
+      a = &p->vmas[i];
+      break;
+    }
+  }
+
+  if (a == 0) return -1;
+
+  uint64 unstart, unlen;
+  uint64 start = a->start, offset = a->offset, orilen = a->length;
+
+  if(addr == a->start){
+    // Unmap at the start
+    unstart = addr;
+    unlen = PGROUNDUP(length) < a->length ? PGROUNDUP(length) : a->length;
+
+    a->start = unstart + unlen; 
+    a->length = a->end - a->start;
+    a->offset = a->offset + unlen;
+  } else if(addr + length >= a->end){
+    // Unmap at the end
+    unstart = addr;
+    unlen = a->end - unstart;
+
+    a->end = unstart;
+    a->length = a->end - a->start;
+  } else{
+    // Unmap the whole region
+    unstart = a->start;
+    unlen = a->end - a->start;
+  }
+  
+  for(int i = 0; i < unlen / PGSIZE; i++){
+    uint64 va = unstart + i * PGSIZE;
+    // May not be alloced due to lazy alloc through page fault.
+    if(vm_exists(p->pagetable, va)){
+      if(a->flags & MAP_SHARED){
+        munmap_writeback(va, PGSIZE, start, offset, a);
+      }
+
+      uvmunmap(p->pagetable, va, 1, 1);
+    }
+  }
+
+  if(unlen == orilen){
+    fileclose(a->f);
+    a->used = 0;
+  }
+  
+  return 0;
 }
