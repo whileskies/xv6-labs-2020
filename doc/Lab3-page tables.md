@@ -237,7 +237,7 @@ if (p->kstack) {
 
 if (p->kernel_pagetable)
   free_pro_kernel_pagetable(p->kernel_pagetable);
-p->kernel_pagetable = 0
+p->kernel_pagetable = 0;
 ```
 
 7. 释放进程内核页表
