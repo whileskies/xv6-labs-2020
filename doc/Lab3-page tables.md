@@ -486,7 +486,7 @@ kernelpt_walkaddr(pagetable_t pagetable, uint64 va)
 }
 ```
 
-9. 复制并修改`vm.c/uvmdealloc函数为`vm.c/uvmdealloc_nofree`
+9. 复制并修改`vm.c/uvmdealloc`函数为`vm.c/uvmdealloc_nofree`
 
 由于`uvmdealloc`函数用于取消用户页表的映射，并删除物理页，但是用户内核页表取消映射时不能删除物理页，因此修改此函数
 
