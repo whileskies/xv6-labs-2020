@@ -13,7 +13,7 @@ MIT 6.S081 / Fall 2020 lab
 - [x] Lab8 [Locks](https://github.com/whileskies/xv6-labs-2020/tree/lock)
 - [x] Lab9 [File system](https://github.com/whileskies/xv6-labs-2020/tree/fs)
 - [x] Lab10 [mmap](https://github.com/whileskies/xv6-labs-2020/tree/mmap)
-- [ ] Lab11 network driver
+- [x] Lab11 [Network driver](https://github.com/whileskies/xv6-labs-2020/tree/net)
 
 
 #### 笔记
@@ -27,3 +27,4 @@ MIT 6.S081 / Fall 2020 lab
 - Lab8 [Locks](doc/Lab8-locks.md)
 - Lab9 [File system](doc/Lab9-file%20system.md)
 - Lab10 [mmap](doc/Lab10-mmap.md)
+- Lab11 [Network driver](doc/Lab11-networking.md)
